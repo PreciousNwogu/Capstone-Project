@@ -54,4 +54,7 @@ class User extends Authenticatable
     public function upvotes(){
         return $this->hasMany(Upvote::class);
     }
+    public function bookmarks(){
+        return $this->belongsToMany(Idea::class,'bookmarks')->withTimestamps();
+    }
 }
