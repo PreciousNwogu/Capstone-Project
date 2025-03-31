@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Idea extends Model
 {
+    protected $fillable = ['title', 'description', 'user_id'];
+
     public function user(){
     return $this->belongsTo(User::class);
 }
@@ -17,4 +19,10 @@ class Idea extends Model
     public function upvotes(){
     return $this->hasMany(Upvote::class);
 }
+    public function bookmarkedBy(){
+    return $this->belongsToMany(User::class, 'bookmarks')->withTimestamps();
+}
+
+
+
 }
