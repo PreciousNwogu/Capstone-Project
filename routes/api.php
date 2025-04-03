@@ -16,7 +16,7 @@ Route::apiResource('ideas', IdeaController::class);
 
 // Routes for Users
 Route::get('/users', function () {
-    return User::first();
+    return User::all();
 });
 Route::get('/users/{id}', function ($id) {
     return User::findOrFail($id);
