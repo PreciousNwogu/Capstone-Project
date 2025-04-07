@@ -12,7 +12,7 @@
                     <h5>Add a New Idea</h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ url('/add-idea') }}" method="POST">
+                    <form action="{{ url('/+') }}" method="POST">
                         @csrf <!-- Laravel CSRF token for security -->
                         <div class="mb-3">
                             <label for="ideaTitle" class="form-label">Idea Title</label>
