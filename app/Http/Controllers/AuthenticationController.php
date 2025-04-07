@@ -16,9 +16,10 @@ class AuthenticationController extends Controller
     public function register(Request $request)
     {
         try {
-            $validator = Validator::make($request->all(), [
+            // Instead of $request->all(), use $request->only([...])
+            $validator = Validator::make($request->only('name', 'email', 'password', 'password_confirmation'), [
                 'name' => 'required|string',
-                'email' => 'required|string|unique:users,email', // Removed 'email' rule
+                'email' => 'required|string|unique:users,email',
                 'password' => 'required|string|confirmed',
             ]);
 
@@ -29,14 +30,12 @@ class AuthenticationController extends Controller
                 ], 422);
             }
 
+            // Create user with request data
             $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
+                'name' => $request->input('name'),         // ← input() works better for form-data
+                'email' => $request->input('email'),
+                'password' => Hash::make($request->input('password')),
             ]);
-
-            // You can keep or remove this event if you don't want email verification at all
-            // event(new Registered($user));
 
             return response()->json([
                 'message' => 'Account created successfully.',
@@ -49,6 +48,7 @@ class AuthenticationController extends Controller
             ], 500);
         }
     }
+
 
     public function login(Request $request)
     {
@@ -86,46 +86,3 @@ class AuthenticationController extends Controller
         return response()->json(['message' => 'Logged out']);
     }
 }
-
-
-    // ✅ Send password reset link
-    // public function sendResetLink(Request $request)
-    // {
-    //     $request->validate(['email' => 'required|email']);
-
-    //     $status = Password::sendResetLink(
-    //         $request->only('email')
-    //     );
-
-    //     return $status === Password::RESET_LINK_SENT
-    //         ? response()->json(['message' => 'Password reset link sent.'])
-    //         : response()->json(['message' => 'Unable to send reset link.'], 400);
-    // }
-
-    // ✅ Reset password with token
-    // Removed duplicate reset method to resolve the issue.
-
-    // public function reset(Request $request)
-    // {
-    //     $request->validate([
-    //         'token' => 'required',
-    //         'email' => 'required|email',
-    //         'password' => 'required|confirmed',
-    //     ]);
-
-    //     $status = Password::reset(
-    //         $request->only('email', 'password', 'password_confirmation', 'token'),
-    //         function ($user, $password) {
-    //             $user->forceFill([
-    //                 'password' => Hash::make($password),
-    //                 'remember_token' => Str::random(60),
-    //             ])->save();
-
-    //             event(new PasswordReset($user));
-    //         }
-    //     );
-
-    //     return $status === Password::PASSWORD_RESET
-    //         ? response()->json(['message' => 'Password reset successful.'])
-    //         : response()->json(['message' => 'Password reset failed.'], 400);
-    // }
