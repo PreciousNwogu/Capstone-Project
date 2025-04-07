@@ -52,23 +52,26 @@ class AuthenticationController extends Controller
 
     public function login(Request $request)
     {
-        $fields = $request->validate([
-            'email' => 'required|string', // Removed 'email' validation rule
+        // Use only() instead of all() or assuming JSON
+        $fields = $request->only('email', 'password');
+
+        $validator = Validator::make($fields, [
+            'email' => 'required|string',
             'password' => 'required|string',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
         $user = User::where('email', $fields['email'])->first();
 
         if (!$user || !Hash::check($fields['password'], $user->password)) {
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
-
-        // Removed email verification check
-        // if (!$user->hasVerifiedEmail()) {
-        //     return response()->json([
-        //         'message' => 'Please verify your email before logging in.'
-        //     ], 403);
-        // }
 
         $token = $user->createToken('apitoken')->plainTextToken;
 
@@ -79,10 +82,19 @@ class AuthenticationController extends Controller
         ], 200);
     }
 
-    public function logout(Request $request)
-    {
-        $request->user()->tokens()->delete();
 
-        return response()->json(['message' => 'Logged out']);
-    }
+    // public function logout(Request $request)
+    // {
+    //     if (!$request->user()) {
+    //         return response()->json([
+    //             'message' => 'Unauthorized. No user authenticated.'
+    //         ], 401);
+    //     }
+
+    //     $request->user()->tokens()->delete();
+
+    //     return response()->json([
+    //         'message' => 'Logged out successfully.'
+    //     ], 200);
+    // }
 }
