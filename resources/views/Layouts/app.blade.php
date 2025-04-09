@@ -41,7 +41,7 @@
 <body>
     <!-- Header -->
     <header>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark" style="box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark" style="box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             <div class="container">
                 <a class="navbar-brand" href="#">
                     <img src="{{ asset('/storage/images/') }}/spacelogo.svg" alt="SpaceShare Logo" height="50">
@@ -55,18 +55,28 @@
                             <a class="nav-link text-light hover-effect" href="{{ url('/profile') }}">Profile</a>
                         </li>
                     </ul>
-                    <a class="nav-link text-light hover-effect me-4" href="{{ url('/+') }}">
-                        <img src="{{ asset('/storage/images/') }}/add.jpg" alt="add icon" height="20">
-                    </a>
                     <a class="btn btn-primary me-2" href="{{ url('/login') }}">Login</a>
                     <a class="btn btn-outline-primary" href="{{ url('/createaccount') }}">Sign Up</a>
                 </div>
             </div>
-</nav>
+        </nav>
     </header>
 
     <!-- Main Content -->
     <main class="container my-4">
+        <!-- Success Message -->
+        @if(session('success'))
+            <div class="alert alert-success text-center">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if(session('success'))
+    <div class="alert alert-success text-center">
+        {{ session('success') }}
+    </div>
+        @endif
+
         @yield('content')
     </main>
 
@@ -83,5 +93,3 @@
     </script>
 </body>
 </html>
-
-
