@@ -9,7 +9,7 @@
         <h1>Welcome to SpaceShare</h1>
         <p class="d-inline">Explore creative ideas and engage with the community.</p>
     </div>
-    <a class="nav-link text-light hover-effect d-flex align-items-center" href="{{ url('/add-idea') }}">
+    <a class="nav-link text-light hover-effect d-flex align-items-center" href="{{ url('/+') }}">
         <img src="{{ asset('/storage/images/') }}/add.jpg" alt="add icon" height="20" class="me-2">
         Add Idea
     </a>
@@ -18,79 +18,12 @@
 <!-- Existing Ideas Section -->
 <div class="row">
     <div class="col-md-20 mx-auto">
-        <div class="list-group">
-            <!-- Example Idea 1 -->
-            <div class="list-group-item bg-dark text-light border-secondary p-3">
-                <h5>
-                    <a href="{{ url('/idea/1') }}" class="text-light text-decoration-none">Revolutionizing Renewable Energy</a>
-                </h5>
-                <p>
-                    A groundbreaking idea to harness solar and wind energy more efficiently using AI-driven optimization algorithms. 
-                    This could significantly reduce energy costs and carbon emissions worldwide.
-                </p>
-                <div class="d-flex justify-content-between">
-                    <button class="btn btn-outline-primary" onclick="showLoginModal()">Like (45)</button>
-                    <button class="btn btn-outline-secondary text-light" onclick="showLoginModal()">Comment (12)</button>
-                </div>
-            </div>
-
-            <!-- Example Idea 2 -->
-            <div class="list-group-item bg-dark text-light border-secondary p-3">
-                <h5>
-                    <a href="{{ url('/idea/2') }}" class="text-light text-decoration-none">Smart Agriculture with IoT</a>
-                </h5>
-                <p>
-                    Leveraging IoT devices to monitor soil health, weather conditions, and crop growth in real-time. 
-                    This idea aims to help farmers increase yield and reduce resource wastage.
-                </p>
-                <div class="d-flex justify-content-between">
-                    <button class="btn btn-outline-primary" onclick="showLoginModal()">Like (32)</button>
-                    <button class="btn btn-outline-secondary text-light" onclick="showLoginModal()">Comment (8)</button>
-                </div>
-            </div>
-
-            <!-- Example Idea 3 -->
-            <div class="list-group-item bg-dark text-light border-secondary p-3">
-                <h5>
-                    <a href="{{ url('/idea/3') }}" class="text-light text-decoration-none">AI-Powered Personal Health Assistant</a>
-                </h5>
-                <p>
-                    An AI-driven app that tracks your daily activities, diet, and exercise routines to provide personalized health recommendations. 
-                    It could also integrate with wearable devices for better insights.
-                </p>
-                <div class="d-flex justify-content-between">
-                    <button class="btn btn-outline-primary" onclick="showLoginModal()">Like (58)</button>
-                    <button class="btn btn-outline-secondary text-light" onclick="showLoginModal()">Comment (20)</button>
-                </div>
-            </div>
-
-            <!-- Example Idea 4 -->
-            <div class="list-group-item bg-dark text-light border-secondary p-3">
-                <h5>
-                    <a href="{{ url('/idea/4') }}" class="text-light text-decoration-none">Virtual Reality for Education</a>
-                </h5>
-                <p>
-                    Using VR technology to create immersive learning experiences for students. 
-                    Imagine exploring ancient civilizations or conducting virtual science experiments from your classroom.
-                </p>
-                <div class="d-flex justify-content-between">
-                    <button class="btn btn-outline-primary" onclick="showLoginModal()">Like (74)</button>
-                    <button class="btn btn-outline-secondary text-light" onclick="showLoginModal()">Comment (15)</button>
-                </div>
-            </div>
-
-            <!-- Example Idea 5 -->
-            <div class="list-group-item bg-dark text-light border-secondary p-3">
-                <h5>
-                    <a href="{{ url('/idea/5') }}" class="text-light text-decoration-none">Eco-Friendly Packaging Solutions</a>
-                </h5>
-                <p>
-                    Developing biodegradable and reusable packaging materials to replace single-use plastics. 
-                    This idea could help reduce plastic pollution and promote sustainable practices.
-                </p>
-                <div class="d-flex justify-content-between">
-                    <button class="btn btn-outline-primary" onclick="showLoginModal()">Like (39)</button>
-                    <button class="btn btn-outline-secondary text-light" onclick="showLoginModal()">Comment (10)</button>
+        <div class="list-group" id="ideas-container">
+            <!-- Ideas will be loaded here via API -->
+            <!-- Loading indicator (only shows while loading) -->
+            <div id="loading-indicator" class="text-center p-4">
+                <div class="spinner-border text-light" role="status">
+                    <span class="visually-hidden">Loading...</span>
                 </div>
             </div>
         </div>
@@ -117,21 +50,151 @@
 </div>
 
 <script>
-    function handleEdit(ideaId) {
-        @if(auth()->check())
-            // If the user is logged in, redirect to the edit page
-            window.location.href = `/edit-idea/${ideaId}`;
-        @else
-            // If the user is not logged in, show the login/signup modal
-            var loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-            loginModal.show();
-        @endif
-    }
-
+    // Check if user is authenticated
+    const isAuthenticated = () => {
+        return localStorage.getItem('auth_token') !== null;
+    };
+    
     function showLoginModal() {
         var loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
         loginModal.show();
     }
+    
+    function handleEdit(ideaId) {
+        if (isAuthenticated()) {
+            // If the user is logged in, redirect to the edit page
+            window.location.href = `/edit-idea/${ideaId}`;
+        } else {
+            // If the user is not logged in, show the login/signup modal
+            showLoginModal();
+        }
+    }
+    
+    function handleLike(ideaId, likeButton) {
+        if (!isAuthenticated()) {
+            showLoginModal();
+            return;
+        }
+        
+        const token = localStorage.getItem('auth_token');
+        
+        // Disable button during API call
+        likeButton.disabled = true;
+        
+        fetch(`{{ url('/api/ideas') }}/${ideaId}/upvote`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the like count on the button
+            likeButton.innerHTML = `Like (${data.upvotes_count || 0})`;
+            likeButton.disabled = false;
+        })
+        .catch(error => {
+            console.error('Error liking idea:', error);
+            likeButton.disabled = false;
+        });
+    }
+    
+    function handleComment(ideaId) {
+        if (!isAuthenticated()) {
+            showLoginModal();
+            return;
+        }
+        
+        // Redirect to the idea detail page
+        window.location.href = `{{ url('/idea') }}/${ideaId}`;
+    }
+    
+    // Function to create the HTML for an idea card
+    function createIdeaCard(idea) {
+        const likeButtonAction = isAuthenticated() 
+            ? `handleLike(${idea.id}, this)` 
+            : 'showLoginModal()';
+            
+        const commentButtonAction = isAuthenticated() 
+            ? `handleComment(${idea.id})` 
+            : 'showLoginModal()';
+        
+        return `
+            <div class="list-group-item bg-dark text-light border-secondary p-3">
+                <h5>
+                    <a href="{{ url('/idea') }}/${idea.id}" class="text-light text-decoration-none">${idea.title}</a>
+                </h5>
+                <p>
+                    ${idea.description}
+                </p>
+                <div class="d-flex justify-content-between">
+                    <button class="btn btn-outline-primary" onclick="${likeButtonAction}">Like (${idea.upvotes_count || 0})</button>
+                    <button class="btn btn-outline-secondary text-light" onclick="${commentButtonAction}">Comment (${idea.comments_count || 0})</button>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Function to fetch ideas from API and display them
+    function fetchIdeas() {
+        const ideasContainer = document.getElementById('ideas-container');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        
+        fetch('{{ url('/api/ideas') }}')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Remove loading indicator
+                if (loadingIndicator) {
+                    loadingIndicator.remove();
+                }
+                
+                // Clear any existing content
+                ideasContainer.innerHTML = '';
+                
+                // Check if data is an array or if it has a data property (for pagination)
+                const ideas = Array.isArray(data) ? data : (data.data || []);
+                
+                if (ideas.length === 0) {
+                    // No ideas found
+                    ideasContainer.innerHTML = `
+                        <div class="text-center p-5 text-light">
+                            <p>No ideas found. Be the first to share your creative idea!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Add each idea to the container
+                ideas.forEach(idea => {
+                    ideasContainer.innerHTML += createIdeaCard(idea);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching ideas:', error);
+                
+                // Remove loading indicator
+                if (loadingIndicator) {
+                    loadingIndicator.remove();
+                }
+                
+                // Show error message
+                ideasContainer.innerHTML = `
+                    <div class="text-center p-4 text-light">
+                        <p>Failed to load ideas. Please try refreshing the page.</p>
+                    </div>
+                `;
+            });
+    }
+    
+    // Load ideas when the page loads
+    document.addEventListener('DOMContentLoaded', fetchIdeas);
 </script>
 
 @endsection

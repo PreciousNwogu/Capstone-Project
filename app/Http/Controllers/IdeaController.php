@@ -23,24 +23,33 @@ class IdeaController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-   public function store(Request $request)
-{
-    $validated = $request->validate([
-        'title' => 'required|string|max:255',
-        'description' => 'required|string',
-    ]);
-
-    // Temporarily get the first user in the database
-    $user = \App\Models\User::first();
-
-    if (!$user) {
-        return response()->json(['error' => 'No user found'], 404);
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+        ]);
+    
+        // Use the authenticated user instead of fetching the first user
+        $user = auth()->user();
+    
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User not authenticated'
+            ], 401);
+        }
+        
+        // Create the idea with the authenticated user
+        $idea = $user->ideas()->create($validated);
+    
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Idea created successfully',
+            'idea' => $idea,
+            'redirect_url' => url('/')
+        ], 201);
     }
-    // Create the idea associated with the fetched user
-    $idea = $user->ideas()->create($validated);
-
-    return response()->json($idea, 201);
-}
 
     /**
      * Display the specified resource.

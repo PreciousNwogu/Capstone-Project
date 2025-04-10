@@ -6,7 +6,7 @@
 <div class="container d-flex justify-content-center align-items-center" style="height: 100vh;">
     <div class="card p-4 text-white" style="width: 350px;">
         <h3 class="text-center">Create Account</h3>
-        <form action="{{ url('/api/register') }}" method="POST">
+        <form id="registerForm" action="{{ url('/api/register') }}" method="POST">
             @csrf <!-- Include CSRF token for security -->
             <div class="mb-3">
                 <label for="fullName" class="form-label">Full Name</label>
@@ -74,15 +74,48 @@
             eyeIcon.classList.add("bi-eye");
         }
     }
-</script>
 
-<!-- Success Notification -->
-@if(session('success'))
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            alert("{{ session('Account created successfully') }}");
-            window.location.href = "{{ url('/') }}"; // Redirect to home page
+    // Registration form submission handling
+    document.getElementById('registerForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent form from submitting normally
+
+        // Get form data
+        const formData = new FormData(this);
+        
+        // Submit form data using AJAX (Fetch API)
+        fetch('{{ url("/api/register") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Show success message
+                alert(data.message);
+                
+                // Redirect to the URL provided by the server
+                window.location.href = data.redirect_url;
+            } else {
+                // Handle error (show error message)
+                if (data.errors) {
+                    // Format validation errors
+                    let errorMessage = 'Validation errors:\n';
+                    for (const field in data.errors) {
+                        errorMessage += `- ${data.errors[field].join('\n- ')}\n`;
+                    }
+                    alert(errorMessage);
+                } else {
+                    alert(data.message || 'Registration failed');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
         });
-    </script>
-@endif
+    });
+</script>
 @endsection

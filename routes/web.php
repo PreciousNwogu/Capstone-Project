@@ -56,70 +56,8 @@ Route::get('/+', function () {
 });
 
 Route::get('/idea/{id}', function ($id) {
-    // Dummy data for ideas
-    $ideas = [
-        1 => [
-            'id' => 1,
-            'title' => 'Revolutionizing Renewable Energy',
-            'description' => 'A groundbreaking idea to harness solar and wind energy more efficiently using AI-driven optimization algorithms.',
-            'likes' => 45,
-            'comments' => [
-                ['id' => 1, 'author' => 'John Doe', 'content' => 'This is a fantastic idea!'],
-                ['id' => 2, 'author' => 'Jane Smith', 'content' => 'I think this could really work.'],
-            ],
-        ],
-        2 => [
-            'id' => 2,
-            'title' => 'Smart Agriculture with IoT',
-            'description' => 'Leveraging IoT devices to monitor soil health, weather conditions, and crop growth in real-time.',
-            'likes' => 32,
-            'comments' => [
-                ['id' => 1, 'author' => 'Mark Lee', 'content' => 'This is a game-changer for farmers!'],
-                ['id' => 2, 'author' => 'Sarah Connor', 'content' => 'Can this work in arid regions?'],
-            ],
-        ],
-        3 => [
-            'id' => 3,
-            'title' => 'AI-Powered Personal Health Assistant',
-            'description' => 'An AI-driven app that tracks your daily activities, diet, and exercise routines to provide personalized health recommendations.',
-            'likes' => 58,
-            'comments' => [
-                ['id' => 1, 'author' => 'Emily Davis', 'content' => 'This could really help people stay healthy!'],
-                ['id' => 2, 'author' => 'Michael Brown', 'content' => 'Can it integrate with fitness trackers?'],
-            ],
-        ],
-        4 => [
-            'id' => 4,
-            'title' => 'Virtual Reality for Education',
-            'description' => 'Using VR technology to create immersive learning experiences for students.',
-            'likes' => 74,
-            'comments' => [
-                ['id' => 1, 'author' => 'Chris Green', 'content' => 'This would make learning so much fun!'],
-                ['id' => 2, 'author' => 'Anna White', 'content' => 'Can this be used for remote learning?'],
-            ],
-        ],
-        5 => [
-            'id' => 5,
-            'title' => 'Eco-Friendly Packaging Solutions',
-            'description' => 'Developing biodegradable and reusable packaging materials to replace single-use plastics.',
-            'likes' => 39,
-            'comments' => [
-                ['id' => 1, 'author' => 'David Black', 'content' => 'This is a great step toward sustainability!'],
-                ['id' => 2, 'author' => 'Sophia Blue', 'content' => 'How can we scale this globally?'],
-            ],
-        ],
-    ];
-    
-
-    // Fetch the idea by ID
-    $idea = $ideas[$id] ?? null;
-
-    // If the idea doesn't exist, return a 404 page
-    if (!$idea) {
-        abort(404, 'Idea not found');
-    }
-
-    return view('viewidea', compact('idea'));
+    // We'll use the API endpoint to get the data, so we just need to pass the ID to the view
+    return view('viewidea', ['id' => $id]);
 });
 
 Route::get('/edit-idea/{id}', function ($id) {
@@ -159,3 +97,7 @@ Route::delete('/delete-comment/{id}', function ($id) {
     // Logic to delete the comment
     return redirect('/')->with('success', 'Comment deleted successfully!');
 })->name('delete-comment');
+
+
+Route::post('/login', [LoginController::class, 'login'])->name('login');
+
