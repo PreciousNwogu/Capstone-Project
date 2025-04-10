@@ -26,7 +26,7 @@
                     <p>{{ $idea['description'] }}</p>
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="text-primary">Likes: {{ $idea['likes'] }}</span>
-                        <button class="btn btn-outline-primary">Like</button>
+                        <button class="btn btn-outline-primary" onclick="showLoginModal()">Like</button>
                     </div>
                 </div>
             </div>
@@ -43,6 +43,11 @@
                                 <li class="list-group-item bg-dark text-light border-secondary">
                                     <strong>{{ $comment['author'] }}:</strong>
                                     <p>{{ $comment['content'] }}</p>
+                                    <form action="{{ url('/delete-comment/' . $comment['id']) }}" method="POST" onsubmit="return confirm('Delete this comment?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger ms-3">Delete</button>
+                            </form>
                                 </li>
                             @endforeach
                         </ul>

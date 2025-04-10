@@ -18,11 +18,21 @@
             </div>
             <div class="mb-3">
                 <label for="password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="password" name="password" required>
+                <div class="input-group">
+                    <input type="password" class="form-control" id="password" name="password" required>
+                    <span class="input-group-text" onclick="togglePassword()" style="cursor: pointer;">
+                        <i id="eyeIconPassword" class="bi bi-eye"></i>
+                    </span>
+                </div>
             </div>
             <div class="mb-3">
                 <label for="confirmPassword" class="form-label">Confirm Password</label>
-                <input type="password" class="form-control" id="confirmPassword" name="password_confirmation" required>
+                <div class="input-group">
+                    <input type="password" class="form-control" id="confirmPassword" name="password_confirmation" required>
+                    <span class="input-group-text" onclick="toggleConfirmPassword()" style="cursor: pointer;">
+                        <i id="eyeIconConfirmPassword" class="bi bi-eye"></i>
+                    </span>
+                </div>
             </div>
             <button type="submit" class="btn btn-primary w-100">Sign Up</button>
         </form>
@@ -32,6 +42,39 @@
         </div>
     </div>
 </div>
+
+<!-- Toggle Password Visibility Script -->
+<script>
+    function togglePassword() {
+        const passwordInput = document.getElementById("password");
+        const eyeIcon = document.getElementById("eyeIconPassword");
+
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            eyeIcon.classList.remove("bi-eye");
+            eyeIcon.classList.add("bi-eye-slash");
+        } else {
+            passwordInput.type = "password";
+            eyeIcon.classList.remove("bi-eye-slash");
+            eyeIcon.classList.add("bi-eye");
+        }
+    }
+
+    function toggleConfirmPassword() {
+        const confirmPasswordInput = document.getElementById("confirmPassword");
+        const eyeIcon = document.getElementById("eyeIconConfirmPassword");
+
+        if (confirmPasswordInput.type === "password") {
+            confirmPasswordInput.type = "text";
+            eyeIcon.classList.remove("bi-eye");
+            eyeIcon.classList.add("bi-eye-slash");
+        } else {
+            confirmPasswordInput.type = "password";
+            eyeIcon.classList.remove("bi-eye-slash");
+            eyeIcon.classList.add("bi-eye");
+        }
+    }
+</script>
 
 <!-- Success Notification -->
 @if(session('success'))
