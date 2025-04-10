@@ -64,8 +64,8 @@ Route::get('/idea/{id}', function ($id) {
             'description' => 'A groundbreaking idea to harness solar and wind energy more efficiently using AI-driven optimization algorithms.',
             'likes' => 45,
             'comments' => [
-                ['author' => 'John Doe', 'content' => 'This is a fantastic idea!'],
-                ['author' => 'Jane Smith', 'content' => 'I think this could really work.'],
+                ['id' => 1, 'author' => 'John Doe', 'content' => 'This is a fantastic idea!'],
+                ['id' => 2, 'author' => 'Jane Smith', 'content' => 'I think this could really work.'],
             ],
         ],
         2 => [
@@ -74,8 +74,8 @@ Route::get('/idea/{id}', function ($id) {
             'description' => 'Leveraging IoT devices to monitor soil health, weather conditions, and crop growth in real-time.',
             'likes' => 32,
             'comments' => [
-                ['author' => 'Mark Lee', 'content' => 'This is a game-changer for farmers!'],
-                ['author' => 'Sarah Connor', 'content' => 'Can this work in arid regions?'],
+                ['id' => 1, 'author' => 'Mark Lee', 'content' => 'This is a game-changer for farmers!'],
+                ['id' => 2, 'author' => 'Sarah Connor', 'content' => 'Can this work in arid regions?'],
             ],
         ],
         3 => [
@@ -84,8 +84,8 @@ Route::get('/idea/{id}', function ($id) {
             'description' => 'An AI-driven app that tracks your daily activities, diet, and exercise routines to provide personalized health recommendations.',
             'likes' => 58,
             'comments' => [
-                ['author' => 'Emily Davis', 'content' => 'This could really help people stay healthy!'],
-                ['author' => 'Michael Brown', 'content' => 'Can it integrate with fitness trackers?'],
+                ['id' => 1, 'author' => 'Emily Davis', 'content' => 'This could really help people stay healthy!'],
+                ['id' => 2, 'author' => 'Michael Brown', 'content' => 'Can it integrate with fitness trackers?'],
             ],
         ],
         4 => [
@@ -94,8 +94,8 @@ Route::get('/idea/{id}', function ($id) {
             'description' => 'Using VR technology to create immersive learning experiences for students.',
             'likes' => 74,
             'comments' => [
-                ['author' => 'Chris Green', 'content' => 'This would make learning so much fun!'],
-                ['author' => 'Anna White', 'content' => 'Can this be used for remote learning?'],
+                ['id' => 1, 'author' => 'Chris Green', 'content' => 'This would make learning so much fun!'],
+                ['id' => 2, 'author' => 'Anna White', 'content' => 'Can this be used for remote learning?'],
             ],
         ],
         5 => [
@@ -104,11 +104,12 @@ Route::get('/idea/{id}', function ($id) {
             'description' => 'Developing biodegradable and reusable packaging materials to replace single-use plastics.',
             'likes' => 39,
             'comments' => [
-                ['author' => 'David Black', 'content' => 'This is a great step toward sustainability!'],
-                ['author' => 'Sophia Blue', 'content' => 'How can we scale this globally?'],
+                ['id' => 1, 'author' => 'David Black', 'content' => 'This is a great step toward sustainability!'],
+                ['id' => 2, 'author' => 'Sophia Blue', 'content' => 'How can we scale this globally?'],
             ],
         ],
     ];
+    
 
     // Fetch the idea by ID
     $idea = $ideas[$id] ?? null;
@@ -153,3 +154,8 @@ Route::delete('/delete-idea/{id}', function ($id) {
     // Logic to delete the idea
     return redirect('/')->with('success', 'Idea deleted successfully!');
 })->name('delete-idea');
+
+Route::delete('/delete-comment/{id}', function ($id) {
+    // Logic to delete the comment
+    return redirect('/')->with('success', 'Comment deleted successfully!');
+})->name('delete-comment');
