@@ -8,9 +8,6 @@ use App\Models\Comment;
 
 class CommentController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
 
 public function all()
 {
@@ -28,16 +25,12 @@ public function all()
          return response()->json($comments, 200);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request, Idea $idea)
 {
     $validated = $request->validate([
         'content' => 'required|string',
     ]);
 
-    // Temporarily fetch first user from the database
     $user = \App\Models\User::first();
 
     if (!$user) {
@@ -46,24 +39,18 @@ public function all()
 
     $comment = $idea->comments()->create([
         'content' => $validated['content'],
-        'user_id' => $user->id,  // Associate the comment with the fetched user
+        'user_id' => $user->id,
     ]);
 
     return response()->json($comment, 201);
 }
 
-
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+
    public function update(Request $request, Comment $comment)
 {
     $validated = $request->validate([
@@ -75,9 +62,6 @@ public function all()
     return response()->json($comment);
 }
 
-    /**
-     * Remove the specified resource from storage.
-     */
    public function destroy(Comment $comment)
 {
     $comment->delete();

@@ -4,89 +4,63 @@ namespace App\Http\Controllers;
 
 use App\Models\Idea;
 use Illuminate\Http\Request;
-
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class IdeaController extends Controller
 {
     use AuthorizesRequests;
-    /**
-     * Display a listing of the resource.
-     */
 
+    // GET /ideas
     public function index()
     {
         $ideas = Idea::with(['user', 'comments', 'upvotes'])->get();
-    return response()->json($ideas, 200);
+        return response()->json($ideas, 200);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // POST /ideas
     public function store(Request $request)
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
         ]);
-    
-        // Use the authenticated user instead of fetching the first user
-        $user = auth()->user();
-    
+
+        $user = \App\Models\User::first();
+
         if (!$user) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'User not authenticated'
-            ], 401);
+            return response()->json(['error' => 'No user found'], 404);
         }
-        
-        // Create the idea with the authenticated user
+
         $idea = $user->ideas()->create($validated);
-    
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Idea created successfully',
-            'idea' => $idea,
-            'redirect_url' => url('/')
-        ], 201);
+
+        return response()->json($idea, 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
+    // GET /ideas/{idea}
     public function show(Idea $idea)
-{
-    $idea->load(['user', 'comments', 'upvotes']);
-    return response()->json($idea, 200);
-}
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Idea $idea)
-{
-    // $this->authorize('update', $idea);
-
-    $validated = $request->validate([
-        'title' => 'sometimes|required|string|max:255',
-        'description' => 'sometimes|required|string',
-    ]);
-
-    $idea->update($validated);
-
-    return response()->json($idea, 200);
-}
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(idea $idea)
     {
-    //      $this->authorize('delete', $idea);
-    // $idea->delete();
-    $idea->delete();
+        $idea->load(['user', 'comments', 'upvotes']);
+        return response()->json($idea, 200);
+    }
 
+    // PUT /ideas/{idea}
+    public function update(Request $request, Idea $idea)
+    {
+        $validated = $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|required|string',
+        ]);
 
-    return response()->json(['message' => 'Idea deleted successfully'], 200);
+        $idea->update($validated);
+
+        return response()->json($idea, 200);
+    }
+
+    // DELETE /ideas/{idea}
+    public function destroy(Idea $idea)
+    {
+        $idea->delete();
+
+        return response()->json(['message' => 'Idea deleted successfully'], 200);
     }
 }
