@@ -19,8 +19,7 @@
 <div class="row">
     <div class="col-md-20 mx-auto">
         <div class="list-group" id="ideas-container">
-            <!-- Ideas will be loaded here via API -->
-            <!-- Loading indicator (only shows while loading) -->
+        
             <div id="loading-indicator" class="text-center p-4">
                 <div class="spinner-border text-light" role="status">
                     <span class="visually-hidden">Loading...</span>

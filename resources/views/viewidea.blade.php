@@ -280,7 +280,6 @@
             // Set the like status based on API response or fallback
             userHasLiked = data.liked || false;
             
-            // Store in localStorage as fallback
             localStorage.setItem(`idea_${ideaId}_liked`, userHasLiked);
             
             return userHasLiked;
@@ -336,31 +335,31 @@
                 const upvotesCount = data.upvotes_count !== undefined ? data.upvotes_count : 0;
                 document.getElementById('idea-likes').textContent = `Likes: ${upvotesCount}`;
                 
-                // Set up the edit button
+              
                 const editButton = document.getElementById('edit-idea-btn');
                 editButton.onclick = () => handleEdit(data.id);
                 
-                // Set up the delete button
+             
                 const deleteButton = document.getElementById('delete-idea-btn');
                 deleteButton.onclick = () => showDeleteConfirmation(data.id);
                 
-                // Show or hide action buttons based on authentication
+          
                 const actionsContainer = document.getElementById('idea-actions');
                 actionsContainer.style.display = isAuthenticated() ? 'flex' : 'none';
                 
-                // Check if user has liked the idea
+         
                 return checkUserLike(data.id).then(() => {
-                    // Set up the like button
+         
                     const likeButton = document.getElementById('like-idea-btn');
                     likeButton.onclick = () => handleLike(data.id);
                     
-                    // Update like button appearance
+                  
                     updateLikeButton();
                     
-                    // Load comments
+                
                     loadComments(data.id);
                     
-                    // Show or hide comment form based on authentication
+                  
                     const commentFormContainer = document.getElementById('comment-form-container');
                     const loginToComment = document.getElementById('login-to-comment');
                     
@@ -473,10 +472,9 @@
             return response.json();
         })
         .then(data => {
-            // Debug log to check the response
-            console.log('Like response data:', data);
+         console.log('Like response data:', data);
             
-            // Save like status to localStorage as fallback
+        
             localStorage.setItem(`idea_${ideaId}_liked`, userHasLiked);
             
             // Update the likes count - ensure we handle zero properly
@@ -489,11 +487,11 @@
         .catch(error => {
             console.error('Error toggling like:', error);
             
-            // Revert the like status on error
+           
             userHasLiked = !userHasLiked;
             updateLikeButton();
             
-            // Re-enable button
+        
             likeButton.disabled = false;
             
             alert('Failed to toggle like. Please try again.');

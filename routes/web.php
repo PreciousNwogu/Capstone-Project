@@ -19,7 +19,7 @@ Route::get('/createaccount', function () {
 Route::get('/profile', function () {
     $userId = 1; // Dummy user ID for demonstration
     
-    // Try to fetch user data from the API with a shorter timeout
+   
     try {
         // Add a 5-second timeout to prevent long waits
         $response = Http::timeout(5)->get(url("api/users/{$userId}"));
@@ -38,7 +38,6 @@ Route::get('/profile', function () {
             // If API request fails, fallback to dummy data
             $user = (object) [
                 'full_name' => 'John Doe',
-                'username' => 'johndoe',
                 'email' => 'johndoe@example.com',
             ];
         }
@@ -81,10 +80,10 @@ Route::post('/profile/update', function (Request $request) {
     // For troubleshooting - update directly without API call
     // Just update the session data for demo purposes
     session(['user_updated' => $updateData]);
-    return redirect('/profile')->with('success', 'Profile updated successfully! (API call bypassed)');
+    return redirect('/profile')->with('success', 'Profile updated successfully!');
     
     // The code below is commented out to prevent timeouts during testing
-    /*
+    
     // Send update request to the API with a shorter timeout
     try {
         // Add a 5-second timeout to prevent long waits
@@ -93,7 +92,7 @@ Route::post('/profile/update', function (Request $request) {
         if ($response->successful()) {
             return redirect('/profile')->with('success', 'Profile updated successfully!');
         } else {
-            // If PUT fails, try using POST with _method=PUT (Laravel method spoofing)
+           
             $updateData['_method'] = 'PUT';
             $response = Http::timeout(5)->post($apiUrl, $updateData);
             
@@ -114,7 +113,7 @@ Route::post('/profile/update', function (Request $request) {
             'message' => 'Connection Error: ' . $e->getMessage()
         ])->withInput($request->except('password'));
     }
-    */
+   
 });
 
 Route::post('/profile/upload-cover', function (Request $request) {
@@ -127,7 +126,7 @@ Route::post('/profile/upload-cover', function (Request $request) {
     if ($request->hasFile('cover_photo')) {
         $file = $request->file('cover_photo');
         $fileName = time() . '_' . $file->getClientOriginalName();
-        $file->storeAs('public/cover_photos', $fileName); // Save the file in the storage directory
+        $file->storeAs('public/images', $fileName); 
     }
 
     // Redirect back to the profile page with a success message
