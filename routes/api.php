@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\AuthenticationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\IdeaController;
@@ -8,7 +7,8 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\UpvoteController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use App\Models\User;
-use App\Http\Controllers\PasswordResetController; // Ensure this controller exists in the specified namespace or create it if missing
+use App\Http\Controllers\AuthenticationController;
+use App\Http\Controllers\UserController;
 
 Route::get('/test', function () {
     return response()->json(['message' => 'Test route is working']);
@@ -35,30 +35,14 @@ Route::delete('comments/{comment}', [CommentController::class, 'destroy']);
 Route::post('ideas/{idea}/upvote', [UpvoteController::class, 'toggle']);
 Route::get('ideas/{idea}/upvotes', [UpvoteController::class, 'index']);
 
+//Users profile routes
+// No authentication — uses explicit user ID
+Route::get('/users/{user}', [UserController::class, 'show']);
+Route::put('/users/{user}', [UserController::class, 'update']);
+
+
 // Auth routes
 Route::post('/register', [AuthenticationController::class, 'register']);
 Route::post('/login', [AuthenticationController::class, 'login']);
 Route::middleware('auth:sanctum')->post('/logout', [AuthenticationController::class, 'logout']);
 
-// ✅ Email verification routes (added only these)
-// Route::middleware(['auth:sanctum'])->group(function () {
-
-//     Route::post('/email/resend', function (Request $request) {
-//         if ($request->user()->hasVerifiedEmail()) {
-//             return response()->json(['message' => 'Email already verified']);
-//         }
-
-//         $request->user()->sendEmailVerificationNotification();
-
-//         return response()->json(['message' => 'Verification link sent!']);
-//     })->name('verification.send');
-
-//     Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-//         $request->fulfill();
-
-//         return response()->json(['message' => 'Email verified successfully.']);
-//     })->middleware('signed')->name('verification.verify');
-// });
-
-
-// Route::post('/reset-password', [AuthenticationController::class, 'reset']);
