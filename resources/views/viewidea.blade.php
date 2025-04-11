@@ -30,7 +30,9 @@
                         <p id="idea-description"></p>
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="text-primary" id="idea-likes">Likes: 0</span>
-                            <button class="btn btn-outline-primary" id="like-idea-btn">Like</button>
+                            <button class="btn btn-outline-primary" id="like-idea-btn">
+                                <i class="bi bi-heart"></i> Like
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -94,36 +96,11 @@
                     </div>
                 </div>
 
-                <!-- View All Comments Button
-                <div class="text-center mt-4">
-                    <button id="view-all-comments-btn" class="btn btn-outline-info">View All Comments</button>
-                </div> -->
-
                 <!-- Back to Home Button -->
                 <div class="text-center mt-4">
                     <a href="{{ url('/') }}" class="btn btn-outline-light">Back to Home</a>
                 </div>
             </div>
-
-            <!-- All Comments Container (Initially Hidden) -->
-            <!-- <div id="all-comments-container" class="card bg-dark text-light mt-4" style="display: none;">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5>All Comments</h5>
-                    <button class="btn btn-outline-light btn-sm" id="back-to-idea-btn">Back to Idea</button>
-                </div>
-                <div class="card-body">
-                    <div id="comments-loading" class="text-center p-3">
-                        <div class="spinner-border text-light" role="status">
-                            <span class="visually-hidden">Loading comments...</span>
-                        </div>
-                        <p class="mt-2">Loading comments...</p>
-                    </div>
-                    <ul class="list-group" id="all-comments-list">
-                        All comments will be loaded here -->
-                    <!-- </ul>
-                    <p id="no-all-comments-message" class="text-center" style="display: none;">No comments available.</p>
-                </div>
-            </div> --> 
 
             <!-- Error message container -->
             <div id="error-container" class="alert alert-danger" style="display: none;">
@@ -173,6 +150,7 @@
     // Get the idea ID from the URL
     const ideaId = window.location.pathname.split('/').pop();
     let ideaData = null;
+    let userHasLiked = false;
     
     // Check if user is authenticated
     const isAuthenticated = () => {
@@ -274,6 +252,62 @@
         });
     }
     
+    // Check if user has liked the idea
+    function checkUserLike(ideaId) {
+        if (!isAuthenticated()) {
+            return Promise.resolve(false);
+        }
+        
+        const token = localStorage.getItem('auth_token');
+        
+        return fetch(`{{ url('/api/ideas') }}/${ideaId}/user-like`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 404) {
+                    // API endpoint doesn't exist, fallback to local storage
+                    return { liked: localStorage.getItem(`idea_${ideaId}_liked`) === 'true' };
+                }
+                throw new Error('Failed to check like status');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Set the like status based on API response or fallback
+            userHasLiked = data.liked || false;
+            
+            // Store in localStorage as fallback
+            localStorage.setItem(`idea_${ideaId}_liked`, userHasLiked);
+            
+            return userHasLiked;
+        })
+        .catch(error => {
+            console.error('Error checking like status:', error);
+            // Fallback to localStorage
+            userHasLiked = localStorage.getItem(`idea_${ideaId}_liked`) === 'true';
+            return userHasLiked;
+        });
+    }
+    
+    // Update like button appearance
+    function updateLikeButton() {
+        const likeButton = document.getElementById('like-idea-btn');
+        
+        if (userHasLiked) {
+            likeButton.classList.remove('btn-outline-primary');
+            likeButton.classList.add('btn-primary');
+            likeButton.innerHTML = '<i class="bi bi-heart-fill"></i> Liked';
+        } else {
+            likeButton.classList.remove('btn-primary');
+            likeButton.classList.add('btn-outline-primary');
+            likeButton.innerHTML = '<i class="bi bi-heart"></i> Like';
+        }
+    }
+    
     // Load idea data from API
     function loadIdea() {
         const loadingIndicator = document.getElementById('loading-indicator');
@@ -297,7 +331,10 @@
                 // Fill in the idea details
                 document.getElementById('idea-title').textContent = data.title;
                 document.getElementById('idea-description').textContent = data.description;
-                document.getElementById('idea-likes').textContent = `Likes: ${data.upvotes_count || 0}`;
+                
+                // Update likes count - ensure we handle zero properly
+                const upvotesCount = data.upvotes_count !== undefined ? data.upvotes_count : 0;
+                document.getElementById('idea-likes').textContent = `Likes: ${upvotesCount}`;
                 
                 // Set up the edit button
                 const editButton = document.getElementById('edit-idea-btn');
@@ -311,28 +348,34 @@
                 const actionsContainer = document.getElementById('idea-actions');
                 actionsContainer.style.display = isAuthenticated() ? 'flex' : 'none';
                 
-                // Set up the like button
-                const likeButton = document.getElementById('like-idea-btn');
-                likeButton.onclick = () => handleLike(data.id);
-                
-                // Load comments
-                loadComments(data.id);
-                
-                // Show or hide comment form based on authentication
-                const commentFormContainer = document.getElementById('comment-form-container');
-                const loginToComment = document.getElementById('login-to-comment');
-                
-                if (isAuthenticated()) {
-                    commentFormContainer.style.display = 'block';
-                    loginToComment.style.display = 'none';
-                } else {
-                    commentFormContainer.style.display = 'none';
-                    loginToComment.style.display = 'block';
-                }
-                
-                // Hide loading indicator and show idea
-                loadingIndicator.style.display = 'none';
-                ideaContainer.style.display = 'block';
+                // Check if user has liked the idea
+                return checkUserLike(data.id).then(() => {
+                    // Set up the like button
+                    const likeButton = document.getElementById('like-idea-btn');
+                    likeButton.onclick = () => handleLike(data.id);
+                    
+                    // Update like button appearance
+                    updateLikeButton();
+                    
+                    // Load comments
+                    loadComments(data.id);
+                    
+                    // Show or hide comment form based on authentication
+                    const commentFormContainer = document.getElementById('comment-form-container');
+                    const loginToComment = document.getElementById('login-to-comment');
+                    
+                    if (isAuthenticated()) {
+                        commentFormContainer.style.display = 'block';
+                        loginToComment.style.display = 'none';
+                    } else {
+                        commentFormContainer.style.display = 'none';
+                        loginToComment.style.display = 'block';
+                    }
+                    
+                    // Hide loading indicator and show idea
+                    loadingIndicator.style.display = 'none';
+                    ideaContainer.style.display = 'block';
+                });
             })
             .catch(error => {
                 console.error('Error loading idea:', error);
@@ -396,74 +439,6 @@
             });
     }
     
-    // Fetch all comments from API
-    function fetchAllComments() {
-        const commentsLoading = document.getElementById('comments-loading');
-        const allCommentsList = document.getElementById('all-comments-list');
-        const noAllCommentsMessage = document.getElementById('no-all-comments-message');
-        
-        // Show loading indicator
-        commentsLoading.style.display = 'block';
-        allCommentsList.innerHTML = '';
-        noAllCommentsMessage.style.display = 'none';
-        
-        fetch(`{{ url('/api/comments') }}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to load comments');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Hide loading indicator
-                commentsLoading.style.display = 'none';
-                
-                // Check if data is an array or has a data property
-                const comments = Array.isArray(data) ? data : (data.data || []);
-                
-                if (comments.length === 0) {
-                    allCommentsList.innerHTML = '';
-                    noAllCommentsMessage.style.display = 'block';
-                    return;
-                }
-                
-                noAllCommentsMessage.style.display = 'none';
-                allCommentsList.innerHTML = '';
-                
-                comments.forEach(comment => {
-                    const commentItem = document.createElement('li');
-                    commentItem.className = 'list-group-item bg-dark text-light border-secondary';
-                    
-                    // Get the author information
-                    const authorName = comment.user ? comment.user.name : 'Anonymous';
-                    
-                    // Create comment content with idea link
-                    commentItem.innerHTML = `
-                        <strong>${authorName}:</strong>
-                        <p>${comment.content || comment.body}</p>
-                        <small>Idea: <a href="/ideas/${comment.idea_id}" class="text-primary">${comment.idea ? comment.idea.title : 'Unknown'}</a></small>
-                    `;
-                    
-                    // Add delete button if user is authenticated
-                    if (isAuthenticated()) {
-                        const deleteButton = document.createElement('button');
-                        deleteButton.className = 'btn btn-sm btn-outline-danger float-end';
-                        deleteButton.textContent = 'Delete';
-                        deleteButton.onclick = () => handleDeleteComment(comment.id, true);
-                        commentItem.appendChild(deleteButton);
-                    }
-                    
-                    allCommentsList.appendChild(commentItem);
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching all comments:', error);
-                commentsLoading.style.display = 'none';
-                noAllCommentsMessage.textContent = 'Failed to load comments.';
-                noAllCommentsMessage.style.display = 'block';
-            });
-    }
-    
     // Handle like button click
     function handleLike(ideaId) {
         if (!isAuthenticated()) {
@@ -472,6 +447,16 @@
         }
         
         const token = localStorage.getItem('auth_token');
+        const likeButton = document.getElementById('like-idea-btn');
+        
+        // Disable button during API call
+        likeButton.disabled = true;
+        
+        // Toggle like status
+        userHasLiked = !userHasLiked;
+        
+        // Update button UI immediately for better UX
+        updateLikeButton();
         
         fetch(`{{ url('/api/ideas') }}/${ideaId}/upvote`, {
             method: 'POST',
@@ -481,14 +466,37 @@
                 'Accept': 'application/json'
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to toggle like');
+            }
+            return response.json();
+        })
         .then(data => {
-            // Update the likes count
-            document.getElementById('idea-likes').textContent = `Likes: ${data.upvotes_count || 0}`;
+            // Debug log to check the response
+            console.log('Like response data:', data);
+            
+            // Save like status to localStorage as fallback
+            localStorage.setItem(`idea_${ideaId}_liked`, userHasLiked);
+            
+            // Update the likes count - ensure we handle zero properly
+            const upvotesCount = data.upvotes_count !== undefined ? data.upvotes_count : 0;
+            document.getElementById('idea-likes').textContent = `Likes: ${upvotesCount}`;
+            
+            // Re-enable button
+            likeButton.disabled = false;
         })
         .catch(error => {
-            console.error('Error liking idea:', error);
-            alert('Failed to like the idea. Please try again.');
+            console.error('Error toggling like:', error);
+            
+            // Revert the like status on error
+            userHasLiked = !userHasLiked;
+            updateLikeButton();
+            
+            // Re-enable button
+            likeButton.disabled = false;
+            
+            alert('Failed to toggle like. Please try again.');
         });
     }
     
@@ -596,7 +604,7 @@
     }
     
     // Handle delete comment
-    function handleDeleteComment(commentId, isAllCommentsView = false) {
+    function handleDeleteComment(commentId) {
         if (!isAuthenticated()) {
             showLoginModal();
             return;
@@ -620,12 +628,8 @@
                 // Show success message
                 alert('Comment deleted successfully');
                 
-                // Refresh comments based on current view
-                if (isAllCommentsView) {
-                    fetchAllComments();
-                } else {
-                    loadComments(ideaId);
-                }
+                // Refresh comments
+                loadComments(ideaId);
             })
             .catch(error => {
                 console.error('Error deleting comment:', error);
@@ -670,30 +674,9 @@
         });
     }
     
-    // Set up view all comments button
-    function setupViewAllCommentsButton() {
-        const viewAllCommentsBtn = document.getElementById('view-all-comments-btn');
-        const backToIdeaBtn = document.getElementById('back-to-idea-btn');
+    // Set up refresh comments button
+    function setupRefreshCommentsButton() {
         const refreshCommentsBtn = document.getElementById('refresh-comments-btn');
-        
-        if (viewAllCommentsBtn) {
-            viewAllCommentsBtn.addEventListener('click', function() {
-                // Hide idea container and show all comments container
-                document.getElementById('idea-container').style.display = 'none';
-                document.getElementById('all-comments-container').style.display = 'block';
-                
-                // Fetch all comments
-                fetchAllComments();
-            });
-        }
-        
-        if (backToIdeaBtn) {
-            backToIdeaBtn.addEventListener('click', function() {
-                // Hide all comments container and show idea container
-                document.getElementById('all-comments-container').style.display = 'none';
-                document.getElementById('idea-container').style.display = 'block';
-            });
-        }
         
         if (refreshCommentsBtn) {
             refreshCommentsBtn.addEventListener('click', function() {
@@ -708,7 +691,7 @@
         loadIdea();
         setupCommentForm();
         setupEditForm();
-        setupViewAllCommentsButton();
+        setupRefreshCommentsButton();
     });
 </script>
 @endsection

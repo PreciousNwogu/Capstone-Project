@@ -50,6 +50,9 @@
 </div>
 
 <script>
+    // Store user like statuses to track UI state
+    const userLikedIdeas = {};
+    
     // Check if user is authenticated
     const isAuthenticated = () => {
         return localStorage.getItem('auth_token') !== null;
@@ -81,6 +84,13 @@
         // Disable button during API call
         likeButton.disabled = true;
         
+        // Toggle the liked state for immediate feedback
+        const currentlyLiked = userLikedIdeas[ideaId] || false;
+        userLikedIdeas[ideaId] = !currentlyLiked;
+        
+        // Update button appearance immediately for better UX
+        updateLikeButton(ideaId, likeButton);
+        
         fetch(`{{ url('/api/ideas') }}/${ideaId}/upvote`, {
             method: 'POST',
             headers: {
@@ -89,15 +99,59 @@
                 'Accept': 'application/json'
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to toggle like');
+            }
+            return response.json();
+        })
         .then(data => {
-            // Update the like count on the button
-            likeButton.innerHTML = `Like (${data.upvotes_count || 0})`;
+            // Save like status to localStorage as fallback
+            localStorage.setItem(`idea_${ideaId}_liked`, userLikedIdeas[ideaId]);
+            
+            // Update the like count with accurate count from server
+            updateLikeCount(ideaId, data.upvotes_count || 0);
+            
+            // Re-enable button
             likeButton.disabled = false;
         })
         .catch(error => {
-            console.error('Error liking idea:', error);
+            console.error('Error toggling like:', error);
+            
+            // Revert the like status on error
+            userLikedIdeas[ideaId] = currentlyLiked;
+            updateLikeButton(ideaId, likeButton);
+            
+            // Re-enable button
             likeButton.disabled = false;
+        });
+    }
+    
+    function updateLikeButton(ideaId, button) {
+        const likeCount = parseInt(button.getAttribute('data-likes') || 0);
+        const isLiked = userLikedIdeas[ideaId] || false;
+        
+        if (isLiked) {
+            button.classList.remove('btn-outline-primary');
+            button.classList.add('btn-primary');
+            button.innerHTML = `<i class="bi bi-heart-fill"></i> Liked (${likeCount})`;
+        } else {
+            button.classList.remove('btn-primary');
+            button.classList.add('btn-outline-primary');
+            button.innerHTML = `<i class="bi bi-heart"></i> Like (${likeCount})`;
+        }
+    }
+    
+    function updateLikeCount(ideaId, count) {
+        const likeButtons = document.querySelectorAll(`[data-idea-id="${ideaId}"]`);
+        likeButtons.forEach(button => {
+            button.setAttribute('data-likes', count);
+            const isLiked = userLikedIdeas[ideaId] || false;
+            if (isLiked) {
+                button.innerHTML = `<i class="bi bi-heart-fill"></i> Liked (${count})`;
+            } else {
+                button.innerHTML = `<i class="bi bi-heart"></i> Like (${count})`;
+            }
         });
     }
     
@@ -111,15 +165,60 @@
         window.location.href = `{{ url('/idea') }}/${ideaId}`;
     }
     
+    // Check if the user has liked an idea
+    function checkUserLike(ideaId) {
+        if (!isAuthenticated()) {
+            return Promise.resolve(false);
+        }
+        
+        const token = localStorage.getItem('auth_token');
+        
+        return fetch(`{{ url('/api/ideas') }}/${ideaId}/user-like`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 404) {
+                    // API endpoint doesn't exist, fallback to local storage
+                    return { liked: localStorage.getItem(`idea_${ideaId}_liked`) === 'true' };
+                }
+                throw new Error('Failed to check like status');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Store the like status
+            userLikedIdeas[ideaId] = data.liked || false;
+            
+            // Also store in localStorage as fallback
+            localStorage.setItem(`idea_${ideaId}_liked`, userLikedIdeas[ideaId]);
+            
+            return userLikedIdeas[ideaId];
+        })
+        .catch(error => {
+            console.error('Error checking like status:', error);
+            // Fallback to localStorage
+            userLikedIdeas[ideaId] = localStorage.getItem(`idea_${ideaId}_liked`) === 'true';
+            return userLikedIdeas[ideaId];
+        });
+    }
+    
     // Function to create the HTML for an idea card
     function createIdeaCard(idea) {
-        const likeButtonAction = isAuthenticated() 
-            ? `handleLike(${idea.id}, this)` 
-            : 'showLoginModal()';
-            
         const commentButtonAction = isAuthenticated() 
             ? `handleComment(${idea.id})` 
             : 'showLoginModal()';
+        
+        // Determine if user has liked this idea
+        const hasLiked = userLikedIdeas[idea.id] || false;
+        
+        // Configure like button appearance based on like status
+        const likeButtonClass = hasLiked ? 'btn-primary' : 'btn-outline-primary';
+        const likeButtonIcon = hasLiked ? 'bi-heart-fill' : 'bi-heart';
+        const likeButtonText = hasLiked ? 'Liked' : 'Like';
         
         return `
             <div class="list-group-item bg-dark text-light border-secondary p-3">
@@ -130,8 +229,15 @@
                     ${idea.description}
                 </p>
                 <div class="d-flex justify-content-between">
-                    <button class="btn btn-outline-primary" onclick="${likeButtonAction}">Like (${idea.upvotes_count || 0})</button>
-                    <button class="btn btn-outline-secondary text-light" onclick="${commentButtonAction}">Comment (${idea.comments_count || 0})</button>
+                    <button class="btn ${likeButtonClass}" 
+                            onclick="handleLike(${idea.id}, this)" 
+                            data-idea-id="${idea.id}" 
+                            data-likes="${idea.upvotes_count || 0}">
+                        <i class="bi ${likeButtonIcon}"></i> ${likeButtonText} (${idea.upvotes_count || 0})
+                    </button>
+                    <button class="btn btn-outline-secondary text-light" onclick="${commentButtonAction}">
+                        Comment (${idea.comments_count || 0})
+                    </button>
                 </div>
             </div>
         `;
@@ -171,9 +277,16 @@
                     return;
                 }
                 
-                // Add each idea to the container
-                ideas.forEach(idea => {
-                    ideasContainer.innerHTML += createIdeaCard(idea);
+                // Check like status for each idea if user is authenticated
+                const likeChecks = isAuthenticated() 
+                    ? Promise.all(ideas.map(idea => checkUserLike(idea.id)))
+                    : Promise.resolve([]);
+                
+                likeChecks.then(() => {
+                    // Add each idea to the container
+                    ideas.forEach(idea => {
+                        ideasContainer.innerHTML += createIdeaCard(idea);
+                    });
                 });
             })
             .catch(error => {

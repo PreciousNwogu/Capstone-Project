@@ -14,9 +14,14 @@
                     <div class="mb-3">
                         <img src="{{ asset('storage/profile.webp') }}" alt="Profile Picture" class="rounded-circle" width="100">
                     </div>
-                    <h4>{{ $user->full_name }}</h4>
-                    <p>{{ $user->username }}</p>
-                    <p>{{ $user->email }}</p>
+                    
+                    @php
+                        // Check for updated user data in session (for our temporary solution)
+                        $updatedUser = session('user_updated');
+                    @endphp
+                    
+                    <h4>{{ $updatedUser['full_name'] ?? $user->full_name }}</h4>
+                    <p>{{ $updatedUser['email'] ?? $user->email }}</p>
 
                     <!-- Edit Profile Button -->
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">Edit Profile</button>
@@ -40,27 +45,46 @@
     </div>
 </div>
 
+<!-- Display success message if available -->
+@if(session('success'))
+    <div class="container mt-3">
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    </div>
+@endif
+
+<!-- Display error message if available -->
+@if($errors->any())
+    <div class="container mt-3">
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    </div>
+@endif
+
 <!-- Edit Profile Modal -->
 <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content bg-dark text-light"> 
             <div class="modal-header border-secondary"> 
                 <h5 class="modal-title" id="editProfileModalLabel">Edit Profile</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button> 
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
             <div class="modal-body">
                 <form action="{{ url('/profile/update') }}" method="POST">
                     @csrf
                     <div class="mb-3">
                         <label class="form-label">Full Name:</label>
-                        <input type="text" class="form-control bg-dark text-light" name="full_name" value="{{ $user->full_name }}"> 
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Username:</label>
-                        <input type="text" class="form-control bg-dark text-light" name="username" value="{{ $user->username }}"> 
+                        <input type="text" class="form-control bg-dark text-light" name="full_name" value="{{ $updatedUser['full_name'] ?? $user->full_name }}"> 
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Email:</label>
-                        <input type="email" class="form-control bg-dark text-light" name="email" value="{{ $user->email }}"> 
+                        <input type="email" class="form-control bg-dark text-light" name="email" value="{{ $updatedUser['email'] ?? $user->email }}"> 
                     </div>
                     <div class="mb-3">
                         <label class="form-label">New Password:</label>
